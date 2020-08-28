@@ -1,0 +1,56 @@
+version: "3:1"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+    depends_on:
+      - db
+    networks:
+      - proxy_net
+      - int_net
+  db:
+    image: mysql:5.7
+    environtment:
+      MYSQL_DATABASE: dbtes
+      MYSQL_USER: arry
+      MYSQL_PASSWORD: arry123
+      MYSQL_ROOT_PASSWORD: arry123
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - int_net
+  proxy:
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
+    depends_on:
+      - web
+      - pma
+    networks:
+      - proxy_net
+      - ext_net
+    port:
+      - '80:80'
+  pma:
+    image: phpmyadmin/phpmyadmin:4.8.3
+    depends_on:
+      - db
+    healthcheck:
+      test: curl -f http://localhost/ || exit 1
+      timeout: 3s
+      interval: 30s
+    networks:
+      - proxy_net
+      - int_net
+
+volumes:
+  mysql-data:
+networks:
+  int_net:
+    driver: bridge
+  proxy_net:
+    driver: bridge
+  ext_net:
+    driver: bridge
